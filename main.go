@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gildasch/upspin-localserver/dir"
 	"upspin.io/rpc/dirserver"
 	"upspin.io/rpc/storeserver"
 	"upspin.io/upspin"
@@ -12,10 +13,6 @@ import (
 
 type config struct {
 	upspin.Config
-}
-
-type dir struct {
-	upspin.DirServer
 }
 
 type store struct {
@@ -31,7 +28,7 @@ func main() {
 
 	dirServer := dirserver.New(
 		config{},
-		dir{},
+		&dir.Dir{},
 		addr)
 
 	http.Handle("/dir", dirServer)
