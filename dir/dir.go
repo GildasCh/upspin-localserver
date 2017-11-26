@@ -36,3 +36,10 @@ func (d *Dir) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 
 	return &upspin.DirEntry{}, nil
 }
+
+func (d *Dir) Glob(pattern string) ([]*upspin.DirEntry, error) {
+	return []*upspin.DirEntry{
+		&upspin.DirEntry{Name: "abc"},
+		&upspin.DirEntry{Name: "def"},
+	}, nil
+}
