@@ -6,14 +6,12 @@ import (
 	"os"
 
 	"github.com/gildasch/upspin-localserver/dir"
+	"upspin.io/config"
+	_ "upspin.io/key/transports"
 	"upspin.io/rpc/dirserver"
 	"upspin.io/rpc/storeserver"
 	"upspin.io/upspin"
 )
-
-type config struct {
-	upspin.Config
-}
 
 type store struct {
 	upspin.StoreServer
@@ -26,19 +24,27 @@ func main() {
 	}
 	addr := upspin.NetAddr("http://localhost:" + port)
 
+	dirCfg := config.New()
+	ep := upspin.Endpoint{
+		Transport: upspin.Remote,
+		NetAddr:   "usl.gildas.ch",
+	}
+	dirCfg = config.SetDirEndpoint(dirCfg, ep)
+	dirCfg = config.SetStoreEndpoint(dirCfg, ep)
+
 	dirServer := dirserver.New(
-		config{},
+		dirCfg,
 		&dir.Dir{},
 		addr)
 
-	http.Handle("/dir", dirServer)
+	http.Handle("/api/Dir/", dirServer)
 
 	storeServer := storeserver.New(
-		config{},
+		dirCfg,
 		store{},
 		addr)
 
-	http.Handle("/store", storeServer)
+	http.Handle("/api/Store/", storeServer)
 
 	fmt.Printf("Listening on %s...\n", port)
 	http.ListenAndServe(":"+port, nil)
