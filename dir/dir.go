@@ -2,6 +2,9 @@ package dir
 
 import (
 	"fmt"
+	"io/ioutil"
+	gopath "path"
+	"strings"
 
 	"github.com/pkg/errors"
 	"upspin.io/path"
@@ -11,7 +14,9 @@ import (
 type Dir struct {
 	upspin.DirServer
 
-	username string
+	Username string
+
+	Root string
 }
 
 func (d *Dir) Dial(upspin.Config, upspin.Endpoint) (upspin.Service, error) {
@@ -29,7 +34,7 @@ func (d *Dir) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "error parsing path")
 	}
-	if string(p.User()) != d.username {
+	if string(p.User()) != d.Username {
 		return nil,
 			fmt.Errorf("user %q is not known on this server", p.User())
 	}
@@ -38,8 +43,35 @@ func (d *Dir) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 }
 
 func (d *Dir) Glob(pattern string) ([]*upspin.DirEntry, error) {
-	return []*upspin.DirEntry{
-		&upspin.DirEntry{Name: "abc"},
-		&upspin.DirEntry{Name: "def"},
-	}, nil
+	if !strings.HasPrefix(pattern, d.Username) {
+		return nil, errors.New("path unknown")
+	}
+	pattern = strings.TrimPrefix(pattern, d.Username)
+	pattern = strings.TrimSuffix(pattern, "*")
+	localPath := gopath.Join(d.Root, pattern)
+	files, err := ioutil.ReadDir(localPath)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := []*upspin.DirEntry{}
+
+	for _, f := range files {
+		de := &upspin.DirEntry{
+			Name: upspin.PathName(f.Name()),
+		}
+		if f.IsDir() {
+			de.Attr = upspin.AttrDirectory
+		} else {
+			de.Blocks = []upspin.DirBlock{upspin.DirBlock{
+				Location: upspin.Location{
+					Reference: upspin.Reference("caca")},
+				Size: f.Size(),
+			}}
+		}
+
+		ret = append(ret, de)
+	}
+
+	return ret, nil
 }

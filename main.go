@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -18,6 +19,10 @@ type store struct {
 }
 
 func main() {
+	rootPtr := flag.String("root", ".",
+		"the root directory to serve")
+	flag.Parse()
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -34,7 +39,9 @@ func main() {
 
 	dirServer := dirserver.New(
 		dirCfg,
-		&dir.Dir{},
+		&dir.Dir{
+			Username: "gildaschbt+local@gmail.com",
+			Root:     *rootPtr},
 		addr)
 
 	http.Handle("/api/Dir/", dirServer)
