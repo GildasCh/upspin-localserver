@@ -106,8 +106,9 @@ func blocksFromFileInfo(f os.FileInfo) (dbs []upspin.DirBlock) {
 					NetAddr:   "usl.gildas.ch",
 				},
 				Reference: upspin.Reference(ref)},
-			Offset: offset,
-			Size:   s,
+			Offset:   offset,
+			Size:     s,
+			Packdata: []byte("nothing"),
 		})
 		offset += s
 	}
