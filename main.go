@@ -7,16 +7,13 @@ import (
 	"os"
 
 	"github.com/gildasch/upspin-localserver/dir"
+	"github.com/gildasch/upspin-localserver/store"
 	"upspin.io/config"
 	_ "upspin.io/key/transports"
 	"upspin.io/rpc/dirserver"
 	"upspin.io/rpc/storeserver"
 	"upspin.io/upspin"
 )
-
-type store struct {
-	upspin.StoreServer
-}
 
 func main() {
 	rootPtr := flag.String("root", ".",
@@ -48,7 +45,7 @@ func main() {
 
 	storeServer := storeserver.New(
 		dirCfg,
-		store{},
+		&store.Store{Root: *rootPtr},
 		addr)
 
 	http.Handle("/api/Store/", storeServer)
