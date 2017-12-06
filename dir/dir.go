@@ -40,7 +40,18 @@ func (d *Dir) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 			fmt.Errorf("user %q is not known on this server", p.User())
 	}
 
-	return &upspin.DirEntry{}, nil
+	f, err := os.Open(gopath.Join(d.Root, p.FilePath()))
+	if err != nil {
+		return nil,
+			fmt.Errorf("could not open file %q", p.FilePath())
+	}
+	fi, err := f.Stat()
+	if err != nil {
+		return nil,
+			fmt.Errorf("could not stat file %q", p.FilePath())
+	}
+
+	return dirEntryFromFileInfo(fi), nil
 }
 
 func (d *Dir) Glob(pattern string) ([]*upspin.DirEntry, error) {
@@ -58,22 +69,27 @@ func (d *Dir) Glob(pattern string) ([]*upspin.DirEntry, error) {
 	ret := []*upspin.DirEntry{}
 
 	for _, f := range files {
-		de := &upspin.DirEntry{
-			Name: upspin.PathName(f.Name()),
-		}
-		if f.IsDir() {
-			de.Attr = upspin.AttrDirectory
-		} else {
-			de.Blocks = blocksFromFile(f)
-		}
-
+		de := dirEntryFromFileInfo(f)
 		ret = append(ret, de)
 	}
 
 	return ret, nil
 }
 
-func blocksFromFile(f os.FileInfo) (dbs []upspin.DirBlock) {
+func dirEntryFromFileInfo(f os.FileInfo) *upspin.DirEntry {
+	de := &upspin.DirEntry{
+		Name:    upspin.PathName(f.Name()),
+		Packing: upspin.PlainPack,
+	}
+	if f.IsDir() {
+		de.Attr = upspin.AttrDirectory
+	} else {
+		de.Blocks = blocksFromFileInfo(f)
+	}
+	return de
+}
+
+func blocksFromFileInfo(f os.FileInfo) (dbs []upspin.DirBlock) {
 	size := f.Size()
 	offset := int64(0)
 	for size > 0 {
