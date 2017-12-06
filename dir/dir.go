@@ -3,6 +3,7 @@ package dir
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	gopath "path"
 	"strings"
 
@@ -63,15 +64,33 @@ func (d *Dir) Glob(pattern string) ([]*upspin.DirEntry, error) {
 		if f.IsDir() {
 			de.Attr = upspin.AttrDirectory
 		} else {
-			de.Blocks = []upspin.DirBlock{upspin.DirBlock{
-				Location: upspin.Location{
-					Reference: upspin.Reference("caca")},
-				Size: f.Size(),
-			}}
+			de.Blocks = blocksFromFile(f)
 		}
 
 		ret = append(ret, de)
 	}
 
 	return ret, nil
+}
+
+func blocksFromFile(f os.FileInfo) (dbs []upspin.DirBlock) {
+	size := f.Size()
+	offset := int64(0)
+	for size > 0 {
+		s := int64(upspin.BlockSize)
+		if s > size {
+			s = size
+		}
+		size -= s
+		ref := fmt.Sprintf("%s-%d", f.Name(), offset)
+		dbs = append(dbs, upspin.DirBlock{
+			Location: upspin.Location{
+				Reference: upspin.Reference(ref)},
+			Offset: offset,
+			Size:   s,
+		})
+		offset += s
+	}
+
+	return
 }
