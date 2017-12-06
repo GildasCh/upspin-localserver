@@ -85,6 +85,10 @@ func blocksFromFile(f os.FileInfo) (dbs []upspin.DirBlock) {
 		ref := fmt.Sprintf("%s-%d", f.Name(), offset)
 		dbs = append(dbs, upspin.DirBlock{
 			Location: upspin.Location{
+				Endpoint: upspin.Endpoint{
+					Transport: upspin.Remote,
+					NetAddr:   "usl.gildas.ch",
+				},
 				Reference: upspin.Reference(ref)},
 			Offset: offset,
 			Size:   s,
