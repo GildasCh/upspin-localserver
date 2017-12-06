@@ -18,6 +18,8 @@ import (
 func main() {
 	rootPtr := flag.String("root", ".",
 		"the root directory to serve")
+	debugPtr := flag.Bool("debug", false,
+		"activate debug mode")
 	flag.Parse()
 
 	port := os.Getenv("PORT")
@@ -38,14 +40,17 @@ func main() {
 		dirCfg,
 		&dir.Dir{
 			Username: "gildaschbt+local@gmail.com",
-			Root:     *rootPtr},
+			Root:     *rootPtr,
+			Debug:    *debugPtr},
 		addr)
 
 	http.Handle("/api/Dir/", dirServer)
 
 	storeServer := storeserver.New(
 		dirCfg,
-		&store.Store{Root: *rootPtr},
+		&store.Store{
+			Root:  *rootPtr,
+			Debug: *debugPtr},
 		addr)
 
 	http.Handle("/api/Store/", storeServer)
