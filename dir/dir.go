@@ -51,7 +51,7 @@ func (d *Dir) Glob(pattern string) ([]*upspin.DirEntry, error) {
 	localPath := gopath.Join(d.Root, pattern)
 	files, err := ioutil.ReadDir(localPath)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error reading dir")
 	}
 
 	ret := []*upspin.DirEntry{}
