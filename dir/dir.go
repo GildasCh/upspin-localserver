@@ -13,8 +13,6 @@ import (
 	"upspin.io/upspin"
 )
 
-const packdata = "nothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothing"
-
 type Dir struct {
 	upspin.DirServer
 
