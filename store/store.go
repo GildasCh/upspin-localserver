@@ -2,9 +2,10 @@ package store
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	"upspin.io/errors"
@@ -49,10 +50,6 @@ func (s *Store) Get(ref upspin.Reference) ([]byte, *upspin.Refdata, []upspin.Loc
 
 	if ref == upspin.HTTPBaseMetadata {
 		return nil, nil, nil, errors.E(errors.NotExist)
-		// return []byte("https://something.com/"),
-		// 	&upspin.Refdata{Reference: ref},
-		// 	nil,
-		// 	nil
 	}
 
 	if s.Debug {
@@ -60,6 +57,12 @@ func (s *Store) Get(ref upspin.Reference) ([]byte, *upspin.Refdata, []upspin.Loc
 	}
 
 	split := strings.Split(string(ref), "-")
+
+	offset, err := strconv.ParseInt(split[len(split)-1], 10, 64)
+	if err != nil {
+		return nil, nil, nil, errors.E(errors.NotExist)
+	}
+
 	relativePath := strings.Join(
 		split[:len(split)-1], "")
 	f, err := os.Open(path.Join(s.Root, relativePath))
@@ -67,8 +70,9 @@ func (s *Store) Get(ref upspin.Reference) ([]byte, *upspin.Refdata, []upspin.Loc
 		return nil, nil, nil, errors.E(errors.NotExist)
 	}
 
-	bytes, err := ioutil.ReadAll(f)
-	if err != nil {
+	bytes := make([]byte, upspin.BlockSize)
+	_, err = f.ReadAt(bytes, offset)
+	if err != nil && err != io.EOF {
 		return nil, nil, nil, errors.E(errors.IO)
 	}
 
