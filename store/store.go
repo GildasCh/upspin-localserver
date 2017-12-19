@@ -2,7 +2,12 @@ package store
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+	"strings"
 
+	"upspin.io/errors"
 	"upspin.io/upspin"
 )
 
@@ -42,12 +47,30 @@ func (s *Store) Get(ref upspin.Reference) ([]byte, *upspin.Refdata, []upspin.Loc
 
 	fmt.Println("requested ref:", ref)
 
+	if ref == upspin.HTTPBaseMetadata {
+		return nil, nil, nil, errors.E(errors.NotExist)
+		// return []byte("https://something.com/"),
+		// 	&upspin.Refdata{Reference: ref},
+		// 	nil,
+		// 	nil
+	}
+
 	if s.Debug {
 		fmt.Printf("store.Get returning %#v\n", []byte("hello"))
 	}
 
-	return []byte("hello"),
-		&upspin.Refdata{Reference: ref},
-		nil,
-		nil
+	split := strings.Split(string(ref), "-")
+	relativePath := strings.Join(
+		split[:len(split)-1], "")
+	f, err := os.Open(path.Join(s.Root, relativePath))
+	if err != nil {
+		return nil, nil, nil, errors.E(errors.NotExist)
+	}
+
+	bytes, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, nil, nil, errors.E(errors.IO)
+	}
+
+	return bytes, &upspin.Refdata{Reference: ref}, nil, nil
 }
