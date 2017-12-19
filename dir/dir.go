@@ -12,6 +12,8 @@ import (
 	"upspin.io/upspin"
 )
 
+const packdata = "nothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothingnothing"
+
 type Dir struct {
 	upspin.DirServer
 
@@ -108,8 +110,9 @@ func (d *Dir) Glob(pattern string) ([]*upspin.DirEntry, error) {
 
 func dirEntryFromFileInfo(f os.FileInfo) *upspin.DirEntry {
 	de := &upspin.DirEntry{
-		Name:    upspin.PathName(f.Name()),
-		Packing: upspin.PlainPack,
+		Name:     upspin.PathName("gildaschbt+local@gmail.com/" + f.Name()),
+		Packing:  upspin.PlainPack,
+		Packdata: []byte(packdata),
 	}
 	if f.IsDir() {
 		de.Attr = upspin.AttrDirectory
@@ -138,7 +141,7 @@ func blocksFromFileInfo(f os.FileInfo) (dbs []upspin.DirBlock) {
 				Reference: upspin.Reference(ref)},
 			Offset:   offset,
 			Size:     s,
-			Packdata: []byte("nothing"),
+			Packdata: []byte(packdata),
 		})
 		offset += s
 	}

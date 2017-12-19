@@ -1,142 +1,82 @@
 package dir
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"upspin.io/bind"
+	"upspin.io/config"
+	"upspin.io/dir/inprocess"
+	"upspin.io/factotum"
+	"upspin.io/path"
+	_ "upspin.io/store/transports"
+	"upspin.io/test/testutil"
 	"upspin.io/upspin"
 )
 
-//go:generate mkdir test_data/empty
+func newConfigAndServices(name upspin.UserName) (cfg upspin.Config, key upspin.KeyServer, dir upspin.DirServer, store upspin.StoreServer) {
+	endpoint := upspin.Endpoint{
+		Transport: upspin.InProcess,
+		NetAddr:   "", // ignored
+	}
+	cfg = config.New()
+	cfg = config.SetUserName(cfg, name)
+	cfg = config.SetPacking(cfg, upspin.EEPack)
+	cfg = config.SetKeyEndpoint(cfg, endpoint)
+	cfg = config.SetStoreEndpoint(cfg, endpoint)
+	cfg = config.SetDirEndpoint(cfg, endpoint)
+	f, err := factotum.NewFromDir(testutil.Repo("key", "testdata", "user1")) // Always use user1's keys.
+	if err != nil {
+		panic(err)
+	}
+	cfg = config.SetFactotum(cfg, f)
 
-func Test_Dial(t *testing.T) {
-	d := &Dir{}
-
-	actual, err := d.Dial(nil, upspin.Endpoint{})
-
-	assert.NoError(t, err)
-	assert.Equal(t, d, actual)
+	key, _ = bind.KeyServer(cfg, cfg.KeyEndpoint())
+	store, _ = bind.StoreServer(cfg, cfg.KeyEndpoint())
+	dir = inprocess.New(cfg)
+	return
 }
 
-func Test_Endpoint(t *testing.T) {
-	d := &Dir{}
-
-	expected := upspin.Endpoint{}
-
-	assert.Equal(t, expected, d.Endpoint())
+func makeDirectory(dir upspin.DirServer, directoryName upspin.PathName) (*upspin.DirEntry, error) {
+	parsed, err := path.Parse(directoryName)
+	if err != nil {
+		return nil, err
+	}
+	// Can't use newDirEntry as it adds a block.
+	entry := &upspin.DirEntry{
+		Name:       parsed.Path(),
+		SignedName: parsed.Path(),
+		Attr:       upspin.AttrDirectory,
+	}
+	return dir.Put(entry)
 }
 
-func Test_Lookup_OK(t *testing.T) {
-	d := &Dir{Username: "test@gmail.com"}
-
-	de, err := d.Lookup("test@gmail.com/toto")
-
-	expected := &upspin.DirEntry{}
-
-	assert.NoError(t, err)
-	assert.Equal(t, expected, de)
-}
-
-func Test_Lookup_Invalid_Path(t *testing.T) {
-	d := &Dir{Username: "test@gmail.com"}
-
-	de, err := d.Lookup("invalid-path")
-
-	assert.Error(t, err)
-	assert.Nil(t, de)
-}
-
-func Test_Lookup_Different_Username(t *testing.T) {
-	d := &Dir{Username: "test@gmail.com"}
-
-	de, err := d.Lookup("test2@gmail.com/toto")
-
-	assert.Error(t, err)
-	assert.Nil(t, de)
-}
-
-func Test_Glob_OK(t *testing.T) {
-	d := &Dir{
-		Username: "test@gmail.com",
-		Root:     "test_data"}
-
-	des, err := d.Glob("test@gmail.com")
-
-	expected := []*upspin.DirEntry{
-		&upspin.DirEntry{
-			Blocks: []upspin.DirBlock{upspin.DirBlock{
-				Location: upspin.Location{
-					Reference: "caca"},
-				Size: 13}},
-			Name: "abc"},
-		&upspin.DirEntry{
-			Blocks: []upspin.DirBlock{upspin.DirBlock{
-				Location: upspin.Location{
-					Reference: "caca"}}},
-			Name: "cde"},
-		&upspin.DirEntry{
-			Attr: upspin.AttrDirectory,
-			Name: "empty"},
-		&upspin.DirEntry{
-			Attr: upspin.AttrDirectory,
-			Name: "subdir"},
+func Test_Lookup(t *testing.T) {
+	cfg, _, _, _ := newConfigAndServices("test@gmail.com")
+	ipdir := inprocess.New(cfg)
+	_, err := makeDirectory(ipdir, upspin.PathName("test@gmail.com"))
+	if err != nil {
+		panic(err)
 	}
 
+	_, err = ipdir.Put(&upspin.DirEntry{
+		Name:       upspin.PathName("test@gmail.com/toto"),
+		SignedName: upspin.PathName("test@gmail.com/toto"),
+		Packing:    upspin.PlainPack,
+		Writer:     upspin.UserName("test@gmail.com"),
+	})
+	fmt.Println(err)
 	assert.NoError(t, err)
-	assert.Equal(t, expected, des)
-}
 
-func Test_Glob_OK_Subpath(t *testing.T) {
-	d := &Dir{
-		Username: "test@gmail.com",
-		Root:     "test_data"}
-
-	des, err := d.Glob("test@gmail.com/subdir")
-
-	expected := []*upspin.DirEntry{
-		&upspin.DirEntry{
-			Blocks: []upspin.DirBlock{upspin.DirBlock{
-				Location: upspin.Location{
-					Reference: "caca"},
-				Size: 16}},
-			Name: "fgh"},
-	}
-
+	expected, err := ipdir.Lookup("test@gmail.com/toto")
 	assert.NoError(t, err)
-	assert.Equal(t, expected, des)
-}
 
-func Test_Glob_OK_Empty_Subpath(t *testing.T) {
-	d := &Dir{
+	actual, err := (&Dir{
 		Username: "test@gmail.com",
-		Root:     "test_data"}
-
-	des, err := d.Glob("test@gmail.com/empty")
-
-	expected := []*upspin.DirEntry{}
-
+		Root:     "test_dir",
+	}).Lookup("test@gmail.com/toto")
 	assert.NoError(t, err)
-	assert.Equal(t, expected, des)
-}
 
-func Test_Glob_Wrong_Username(t *testing.T) {
-	d := &Dir{
-		Username: "test@gmail.com",
-		Root:     "test_data"}
-
-	des, err := d.Glob("testg@mail.com")
-
-	assert.Error(t, err)
-	assert.Nil(t, des)
-}
-
-func Test_Glob_Wrong_Dir_Root(t *testing.T) {
-	d := &Dir{
-		Username: "test@gmail.com",
-		Root:     "wrong_root"}
-
-	des, err := d.Glob("test@gmail.com")
-
-	assert.Error(t, err)
-	assert.Nil(t, des)
+	assert.Equal(t, expected, actual)
 }

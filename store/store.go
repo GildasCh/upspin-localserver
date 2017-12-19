@@ -46,5 +46,8 @@ func (s *Store) Get(ref upspin.Reference) ([]byte, *upspin.Refdata, []upspin.Loc
 		fmt.Printf("store.Get returning %#v\n", []byte("hello"))
 	}
 
-	return []byte("hello"), nil, nil, nil
+	return []byte("hello"),
+		&upspin.Refdata{Reference: ref},
+		nil,
+		nil
 }
