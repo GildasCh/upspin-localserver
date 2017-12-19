@@ -9,6 +9,7 @@ import (
 	"github.com/gildasch/upspin-localserver/dir"
 	"github.com/gildasch/upspin-localserver/store"
 	"upspin.io/config"
+	"upspin.io/factotum"
 	_ "upspin.io/key/transports"
 	"upspin.io/rpc/dirserver"
 	"upspin.io/rpc/storeserver"
@@ -28,26 +29,21 @@ func main() {
 	}
 	addr := upspin.NetAddr("http://localhost:" + port)
 
-	dirCfg := config.New()
-	ep := upspin.Endpoint{
-		Transport: upspin.Remote,
-		NetAddr:   "usl.gildas.ch",
-	}
-	dirCfg = config.SetDirEndpoint(dirCfg, ep)
-	dirCfg = config.SetStoreEndpoint(dirCfg, ep)
+	cfg := newConfig()
 
 	dirServer := dirserver.New(
-		dirCfg,
+		cfg,
 		&dir.Dir{
 			Username: "gildaschbt+local@gmail.com",
 			Root:     *rootPtr,
-			Debug:    *debugPtr},
+			Debug:    *debugPtr,
+			Config:   cfg},
 		addr)
 
 	http.Handle("/api/Dir/", dirServer)
 
 	storeServer := storeserver.New(
-		dirCfg,
+		cfg,
 		&store.Store{
 			Root:  *rootPtr,
 			Debug: *debugPtr},
@@ -57,4 +53,25 @@ func main() {
 
 	fmt.Printf("Listening on %s...\n", port)
 	http.ListenAndServe(":"+port, nil)
+}
+
+func newConfig() upspin.Config {
+	endpoint := upspin.Endpoint{
+		Transport: upspin.Remote,
+		NetAddr:   "usl.gildas.ch",
+	}
+	cfg := config.New()
+	cfg = config.SetUserName(cfg, upspin.UserName("gildaschbt+local@gmail.com"))
+	cfg = config.SetPacking(cfg, upspin.PlainPack)
+	cfg = config.SetStoreEndpoint(cfg, endpoint)
+	cfg = config.SetDirEndpoint(cfg, endpoint)
+
+	f, err := factotum.NewFromDir(
+		"/home/gildas/.ssh/gildaschbt+local@gmail.com")
+	if err != nil {
+		panic(err)
+	}
+	cfg = config.SetFactotum(cfg, f)
+
+	return cfg
 }

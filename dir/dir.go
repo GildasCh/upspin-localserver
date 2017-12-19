@@ -7,6 +7,7 @@ import (
 	gopath "path"
 	"strings"
 
+	"github.com/gildasch/upspin-localserver/packing"
 	"github.com/pkg/errors"
 	"upspin.io/path"
 	"upspin.io/upspin"
@@ -20,6 +21,7 @@ type Dir struct {
 	Username string
 	Root     string
 	Debug    bool
+	Config   upspin.Config
 }
 
 func (d *Dir) Dial(config upspin.Config, endpoint upspin.Endpoint) (upspin.Service, error) {
@@ -69,7 +71,7 @@ func (d *Dir) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 			fmt.Errorf("could not stat file %q", p.FilePath())
 	}
 
-	de := dirEntryFromFileInfo(fi)
+	de := packing.PlainDirEntry(fi, d.Config)
 
 	if d.Debug {
 		fmt.Printf("dir.Lookup returning %#v\n", de)
@@ -96,8 +98,8 @@ func (d *Dir) Glob(pattern string) ([]*upspin.DirEntry, error) {
 
 	ret := []*upspin.DirEntry{}
 
-	for _, f := range files {
-		de := dirEntryFromFileInfo(f)
+	for _, fi := range files {
+		de := packing.PlainDirEntry(fi, d.Config)
 		ret = append(ret, de)
 	}
 
@@ -106,45 +108,4 @@ func (d *Dir) Glob(pattern string) ([]*upspin.DirEntry, error) {
 	}
 
 	return ret, nil
-}
-
-func dirEntryFromFileInfo(f os.FileInfo) *upspin.DirEntry {
-	de := &upspin.DirEntry{
-		Name:     upspin.PathName("gildaschbt+local@gmail.com/" + f.Name()),
-		Packing:  upspin.PlainPack,
-		Packdata: []byte(packdata),
-	}
-	if f.IsDir() {
-		de.Attr = upspin.AttrDirectory
-	} else {
-		de.Blocks = blocksFromFileInfo(f)
-	}
-	return de
-}
-
-func blocksFromFileInfo(f os.FileInfo) (dbs []upspin.DirBlock) {
-	size := f.Size()
-	offset := int64(0)
-	for size > 0 {
-		s := int64(upspin.BlockSize)
-		if s > size {
-			s = size
-		}
-		size -= s
-		ref := fmt.Sprintf("%s-%d", f.Name(), offset)
-		dbs = append(dbs, upspin.DirBlock{
-			Location: upspin.Location{
-				Endpoint: upspin.Endpoint{
-					Transport: upspin.Remote,
-					NetAddr:   "usl.gildas.ch",
-				},
-				Reference: upspin.Reference(ref)},
-			Offset:   offset,
-			Size:     s,
-			Packdata: []byte(packdata),
-		})
-		offset += s
-	}
-
-	return
 }
