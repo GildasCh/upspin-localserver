@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	gopath "path"
+	"path/filepath"
 	"strings"
 
 	"github.com/gildasch/upspin-localserver/packing"
@@ -58,7 +59,7 @@ func (d *Dir) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 			fmt.Errorf("user %q is not known on this server", p.User())
 	}
 
-	f, err := os.Open(gopath.Join(d.Root, p.FilePath()))
+	f, err := os.Open(filepath.Join(d.Root, filepath.FromSlash(gopath.Clean("/"+string(p.FilePath())))))
 	if err != nil {
 		return nil,
 			fmt.Errorf("could not open file %q", p.FilePath())
@@ -88,7 +89,7 @@ func (d *Dir) Glob(pattern string) ([]*upspin.DirEntry, error) {
 	}
 	pattern = strings.TrimPrefix(pattern, d.Username)
 	pattern = strings.TrimSuffix(pattern, "*")
-	localPath := gopath.Join(d.Root, pattern)
+	localPath := filepath.Join(d.Root, filepath.FromSlash(gopath.Clean("/"+pattern)))
 	files, err := ioutil.ReadDir(localPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error reading dir")
