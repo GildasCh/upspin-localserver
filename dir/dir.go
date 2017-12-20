@@ -59,7 +59,9 @@ func (d *Dir) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 			fmt.Errorf("user %q is not known on this server", p.User())
 	}
 
-	f, err := os.Open(filepath.Join(d.Root, filepath.FromSlash(gopath.Clean("/"+string(p.FilePath())))))
+	localpath := filepath.Join(d.Root, filepath.FromSlash(gopath.Clean("/"+string(p.FilePath()))))
+
+	f, err := os.Open(localpath)
 	if err != nil {
 		return nil,
 			fmt.Errorf("could not open file %q", p.FilePath())
@@ -70,7 +72,7 @@ func (d *Dir) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 			fmt.Errorf("could not stat file %q", p.FilePath())
 	}
 
-	de := packing.PlainDirEntry(fi, d.Config)
+	de := packing.PlainDirEntry(strings.TrimPrefix(gopath.Dir(localpath), d.Root), fi, d.Config)
 
 	if d.Debug {
 		fmt.Printf("dir.Lookup returning %#v\n", de)
@@ -98,7 +100,7 @@ func (d *Dir) Glob(pattern string) ([]*upspin.DirEntry, error) {
 	ret := []*upspin.DirEntry{}
 
 	for _, fi := range files {
-		de := packing.PlainDirEntry(fi, d.Config)
+		de := packing.PlainDirEntry(strings.TrimPrefix(localPath, d.Root), fi, d.Config)
 		ret = append(ret, de)
 	}
 

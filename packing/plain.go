@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"path"
 
 	"upspin.io/pack/packutil"
 	"upspin.io/upspin"
@@ -20,8 +21,8 @@ var (
 	zero = big.NewInt(0)
 )
 
-func PlainDirEntry(fi os.FileInfo, cfg upspin.Config) *upspin.DirEntry {
-	e := dirEntryFromFileInfo(fi)
+func PlainDirEntry(dir string, fi os.FileInfo, cfg upspin.Config) *upspin.DirEntry {
+	e := dirEntryFromFileInfo(dir, fi)
 
 	// Compute entry signature with dkey=sum=0.
 	f := cfg.Factotum()
@@ -37,21 +38,22 @@ func PlainDirEntry(fi os.FileInfo, cfg upspin.Config) *upspin.DirEntry {
 	return e
 }
 
-func dirEntryFromFileInfo(fi os.FileInfo) *upspin.DirEntry {
+func dirEntryFromFileInfo(dir string, fi os.FileInfo) *upspin.DirEntry {
 	de := &upspin.DirEntry{
-		Name:    upspin.PathName("gildaschbt+local@gmail.com/" + fi.Name()),
+		Name: upspin.PathName(
+			"gildaschbt+local@gmail.com" + path.Join("/", dir, fi.Name())),
 		Packing: upspin.PlainPack,
 		Writer:  upspin.UserName("gildaschbt+local@gmail.com"),
 	}
 	if fi.IsDir() {
 		de.Attr = upspin.AttrDirectory
 	} else {
-		de.Blocks = blocksFromFileInfo(fi)
+		de.Blocks = blocksFromFileInfo(dir, fi)
 	}
 	return de
 }
 
-func blocksFromFileInfo(fi os.FileInfo) (dbs []upspin.DirBlock) {
+func blocksFromFileInfo(dir string, fi os.FileInfo) (dbs []upspin.DirBlock) {
 	size := fi.Size()
 	offset := int64(0)
 	for size > 0 {
@@ -60,7 +62,7 @@ func blocksFromFileInfo(fi os.FileInfo) (dbs []upspin.DirBlock) {
 			s = size
 		}
 		size -= s
-		ref := fmt.Sprintf("%s-%d", fi.Name(), offset)
+		ref := fmt.Sprintf("%s-%d", path.Join(dir, fi.Name()), offset)
 		dbs = append(dbs, upspin.DirBlock{
 			Location: upspin.Location{
 				Endpoint: upspin.Endpoint{
