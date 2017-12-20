@@ -52,10 +52,6 @@ func (s *Store) Get(ref upspin.Reference) ([]byte, *upspin.Refdata, []upspin.Loc
 		return nil, nil, nil, errors.E(errors.NotExist)
 	}
 
-	if s.Debug {
-		fmt.Printf("store.Get returning %#v\n", []byte("hello"))
-	}
-
 	split := strings.Split(string(ref), "-")
 
 	offset, err := strconv.ParseInt(split[len(split)-1], 10, 64)
@@ -74,6 +70,10 @@ func (s *Store) Get(ref upspin.Reference) ([]byte, *upspin.Refdata, []upspin.Loc
 	_, err = f.ReadAt(bytes, offset)
 	if err != nil && err != io.EOF {
 		return nil, nil, nil, errors.E(errors.IO)
+	}
+
+	if s.Debug {
+		fmt.Printf("store.Get returning byte array of lenght %d starting with %#v\n", len(bytes), bytes[:20])
 	}
 
 	return bytes, &upspin.Refdata{Reference: ref}, nil, nil
