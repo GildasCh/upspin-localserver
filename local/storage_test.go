@@ -49,18 +49,18 @@ func TestOpenNotFound(t *testing.T) {
 }
 
 func TestStatOK(t *testing.T) {
-	fi1 := &FileInfo{
+	fi1 := FileInfo{
 		Filename: "test_data/test_1.txt",
 		Dir:      "test_data",
 		IsDir:    false,
 		Size:     17}
-	fi2 := &FileInfo{
+	fi2 := FileInfo{
 		Filename: "test_data/subdir/toto",
 		Dir:      "test_data/subdir",
 		IsDir:    false,
 		Size:     1}
 
-	cases := map[string]*FileInfo{
+	cases := map[string]FileInfo{
 		"test_1.txt":                      fi1,
 		"subdir/../../../test_1.txt":      fi1,
 		"unknown_dir/../../../test_1.txt": fi1,
@@ -87,7 +87,7 @@ func TestStatNotFound(t *testing.T) {
 	for _, in := range cases {
 		f, err := s.Stat(in)
 		assert.Error(t, err)
-		assert.Nil(t, f)
+		assert.Zero(t, f)
 	}
 }
 

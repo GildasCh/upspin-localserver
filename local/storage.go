@@ -19,6 +19,10 @@ type FileInfo struct {
 	Size     int64
 }
 
+func (fi FileInfo) Path() string {
+	return filepath.Join(fi.Dir, fi.Filename)
+}
+
 func (s *Storage) Open(name string) (*os.File, error) {
 	f, err := os.Open(s.filename(name))
 	if err != nil {
@@ -28,17 +32,17 @@ func (s *Storage) Open(name string) (*os.File, error) {
 	return f, nil
 }
 
-func (s *Storage) Stat(name string) (*FileInfo, error) {
+func (s *Storage) Stat(name string) (FileInfo, error) {
 	f, err := os.Open(s.filename(name))
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not open file %q", name)
+		return FileInfo{}, errors.Wrapf(err, "could not open file %q", name)
 	}
 	fi, err := f.Stat()
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not stat file %q", name)
+		return FileInfo{}, errors.Wrapf(err, "could not stat file %q", name)
 	}
 
-	return &FileInfo{
+	return FileInfo{
 		Filename: s.filename(name),
 		Dir:      s.dir(name),
 		IsDir:    fi.IsDir(),
