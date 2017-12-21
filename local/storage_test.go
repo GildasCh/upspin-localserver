@@ -33,6 +33,22 @@ func TestOpenOK(t *testing.T) {
 	}
 }
 
+func TestDeeperRoot(t *testing.T) {
+	expected := []byte(`
+`)
+
+	s := &Storage{"test_data/subdir"}
+
+	f, err := s.Open("toto")
+	assert.NoError(t, err)
+	bytes, err := ioutil.ReadAll(f)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, bytes)
+
+	assert.Equal(t, "test_data/subdir/toto", s.filename("toto"))
+	assert.Equal(t, "test_data/subdir", s.dir("toto"))
+}
+
 func TestOpenNotFound(t *testing.T) {
 	cases := []string{
 		"test_2.txt",
@@ -50,13 +66,13 @@ func TestOpenNotFound(t *testing.T) {
 
 func TestStatOK(t *testing.T) {
 	fi1 := FileInfo{
-		Filename: "test_data/test_1.txt",
-		Dir:      "test_data",
+		Filename: "/test_1.txt",
+		Dir:      "",
 		IsDir:    false,
 		Size:     17}
 	fi2 := FileInfo{
-		Filename: "test_data/subdir/toto",
-		Dir:      "test_data/subdir",
+		Filename: "/subdir/toto",
+		Dir:      "/subdir",
 		IsDir:    false,
 		Size:     1}
 
@@ -94,18 +110,18 @@ func TestStatNotFound(t *testing.T) {
 func TestListOK(t *testing.T) {
 	expected1 := []FileInfo{
 		FileInfo{
-			Filename: "subdir",
+			Filename: "/subdir",
 			Dir:      ".",
 			IsDir:    true,
 			Size:     4096},
 		FileInfo{
-			Filename: "test_1.txt",
+			Filename: "/test_1.txt",
 			Dir:      ".",
 			IsDir:    false,
 			Size:     17}}
 	expected2 := []FileInfo{
 		FileInfo{
-			Filename: "toto",
+			Filename: "subdir/toto",
 			Dir:      "test_data",
 			IsDir:    false,
 			Size:     1}}

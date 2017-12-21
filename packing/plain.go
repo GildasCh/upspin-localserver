@@ -40,7 +40,7 @@ func PlainDirEntry(fi local.FileInfo, cfg upspin.Config) *upspin.DirEntry {
 func dirEntryFromFileInfo(fi local.FileInfo) *upspin.DirEntry {
 	de := &upspin.DirEntry{
 		Name: upspin.PathName(
-			"gildaschbt+local@gmail.com/" + fi.Path()),
+			"gildaschbt+local@gmail.com" + fi.Filename),
 		Packing: upspin.PlainPack,
 		Writer:  upspin.UserName("gildaschbt+local@gmail.com"),
 	}
@@ -61,7 +61,7 @@ func blocksFromFileInfo(fi local.FileInfo) (dbs []upspin.DirBlock) {
 			s = size
 		}
 		size -= s
-		ref := fmt.Sprintf("%s-%d", fi.Path(), offset)
+		ref := fmt.Sprintf("%s-%d", fi.Filename, offset)
 		dbs = append(dbs, upspin.DirBlock{
 			Location: upspin.Location{
 				Endpoint: upspin.Endpoint{

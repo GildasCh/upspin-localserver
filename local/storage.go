@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -43,8 +44,8 @@ func (s *Storage) Stat(name string) (FileInfo, error) {
 	}
 
 	return FileInfo{
-		Filename: s.filename(name),
-		Dir:      s.dir(name),
+		Filename: strings.TrimPrefix(s.filename(name), s.Root),
+		Dir:      strings.TrimPrefix(s.dir(name), s.Root),
 		IsDir:    fi.IsDir(),
 		Size:     fi.Size(),
 	}, nil
@@ -60,7 +61,7 @@ func (s *Storage) List(pattern string) ([]FileInfo, error) {
 
 	for _, fi := range fis {
 		infos = append(infos, FileInfo{
-			Filename: fi.Name(),
+			Filename: filepath.Join(pattern, fi.Name()),
 			Dir:      s.dir(pattern),
 			IsDir:    fi.IsDir(),
 			Size:     fi.Size(),
