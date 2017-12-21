@@ -2,12 +2,9 @@ package dir
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
-	gopath "path"
-	"path/filepath"
 	"strings"
 
+	"github.com/gildasch/upspin-localserver/local"
 	"github.com/gildasch/upspin-localserver/packing"
 	"github.com/pkg/errors"
 	"upspin.io/path"
@@ -19,6 +16,7 @@ type Dir struct {
 
 	Username string
 	Root     string
+	Storage  *local.Storage
 	Debug    bool
 	Config   upspin.Config
 }
@@ -59,20 +57,13 @@ func (d *Dir) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 			fmt.Errorf("user %q is not known on this server", p.User())
 	}
 
-	localpath := filepath.Join(d.Root, filepath.FromSlash(gopath.Clean("/"+string(p.FilePath()))))
-
-	f, err := os.Open(localpath)
-	if err != nil {
-		return nil,
-			fmt.Errorf("could not open file %q", p.FilePath())
-	}
-	fi, err := f.Stat()
+	fi, err := d.Storage.Stat(p.FilePath())
 	if err != nil {
 		return nil,
 			fmt.Errorf("could not stat file %q", p.FilePath())
 	}
 
-	de := packing.PlainDirEntry(strings.TrimPrefix(gopath.Dir(localpath), d.Root), fi, d.Config)
+	de := packing.PlainDirEntry(fi, d.Config)
 
 	if d.Debug {
 		fmt.Printf("dir.Lookup returning %#v\n", de)
@@ -91,16 +82,16 @@ func (d *Dir) Glob(pattern string) ([]*upspin.DirEntry, error) {
 	}
 	pattern = strings.TrimPrefix(pattern, d.Username)
 	pattern = strings.TrimSuffix(pattern, "*")
-	localPath := filepath.Join(d.Root, filepath.FromSlash(gopath.Clean("/"+pattern)))
-	files, err := ioutil.ReadDir(localPath)
+
+	fis, err := d.Storage.List(pattern)
 	if err != nil {
 		return nil, errors.Wrap(err, "error reading dir")
 	}
 
 	ret := []*upspin.DirEntry{}
 
-	for _, fi := range files {
-		de := packing.PlainDirEntry(strings.TrimPrefix(localPath, d.Root), fi, d.Config)
+	for _, fi := range fis {
+		de := packing.PlainDirEntry(fi, d.Config)
 		ret = append(ret, de)
 	}
 

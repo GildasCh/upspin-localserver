@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/gildasch/upspin-localserver/dir"
+	"github.com/gildasch/upspin-localserver/local"
 	"github.com/gildasch/upspin-localserver/store"
 	"upspin.io/config"
 	"upspin.io/factotum"
@@ -36,6 +37,7 @@ func main() {
 		&dir.Dir{
 			Username: "gildaschbt+local@gmail.com",
 			Root:     *rootPtr,
+			Storage:  &local.Storage{*rootPtr},
 			Debug:    *debugPtr,
 			Config:   cfg},
 		addr)
