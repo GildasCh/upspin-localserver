@@ -24,6 +24,7 @@ type Dir struct {
 	Storage  Storage
 	Debug    bool
 	Factotum packing.Factotum
+	Packing  packing.Simulator
 }
 
 func (d *Dir) Dial(config upspin.Config, endpoint upspin.Endpoint) (upspin.Service, error) {
@@ -68,7 +69,7 @@ func (d *Dir) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 			fmt.Errorf("could not stat file %q", p.FilePath())
 	}
 
-	de := packing.PlainDirEntry(d.Username, fi, d.Factotum)
+	de := d.Packing.DirEntry(d.Username, fi, d.Factotum)
 
 	if d.Debug {
 		fmt.Printf("dir.Lookup returning %#v\n", de)
@@ -96,7 +97,7 @@ func (d *Dir) Glob(pattern string) ([]*upspin.DirEntry, error) {
 	ret := []*upspin.DirEntry{}
 
 	for _, fi := range fis {
-		de := packing.PlainDirEntry(d.Username, fi, d.Factotum)
+		de := d.Packing.DirEntry(d.Username, fi, d.Factotum)
 		ret = append(ret, de)
 	}
 

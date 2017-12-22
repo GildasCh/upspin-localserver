@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/gildasch/upspin-localserver/local"
+	"github.com/gildasch/upspin-localserver/packing"
 	"github.com/stretchr/testify/assert"
 	_ "upspin.io/store/transports"
 	"upspin.io/upspin"
@@ -38,6 +39,14 @@ func (mf *MockFactotum) DirEntryHash(
 	return nil
 }
 
+type MockPacking struct{}
+
+func (mp *MockPacking) DirEntry(username string, fi local.FileInfo, factotum packing.Factotum) *upspin.DirEntry {
+	return &upspin.DirEntry{
+		Sequence: 1234,
+	}
+}
+
 func TestLookup(t *testing.T) {
 	dir := Dir{
 		Username: "test.user@some-mail.com",
@@ -45,26 +54,13 @@ func TestLookup(t *testing.T) {
 		Storage:  &MockStorage{},
 		Debug:    false,
 		Factotum: &MockFactotum{},
+		Packing:  &MockPacking{},
 	}
 
 	entry, err := dir.Lookup("test.user@some-mail.com/test_data/abc")
 
 	expected := &upspin.DirEntry{
-		Packing: upspin.PlainPack,
-		Blocks: []upspin.DirBlock{
-			upspin.DirBlock{
-				Location: upspin.Location{
-					Endpoint: upspin.Endpoint{
-						Transport: upspin.Remote,
-						NetAddr:   "usl.gildas.ch"},
-					Reference: "/test_data/abc-0"},
-				Offset:   0,
-				Size:     20,
-				Packdata: []uint8(nil)}},
-		Packdata: []uint8{0x8, 0x1, 0xf6, 0xc2, 0xc, 0xe, 0x3, 0x7d, 0x57, 0x37, 0xd5, 0x44, 0x7e, 0x0, 0x0},
-		Writer:   "test.user@some-mail.com",
-		Name:     "test.user@some-mail.com/test_data/abc",
-		Sequence: 0,
+		Sequence: 1234,
 	}
 
 	assert.NoError(t, err)

@@ -27,7 +27,9 @@ type Factotum interface {
 		t upspin.Time, dkey, hash []byte) upspin.DEHash
 }
 
-func PlainDirEntry(username string, fi local.FileInfo, factotum Factotum) *upspin.DirEntry {
+type Plain struct{}
+
+func (Plain) DirEntry(username string, fi local.FileInfo, factotum Factotum) *upspin.DirEntry {
 	e := dirEntryFromFileInfo(username, fi)
 
 	// Compute entry signature with dkey=sum=0.

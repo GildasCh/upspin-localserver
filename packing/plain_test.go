@@ -25,7 +25,7 @@ func Test_PlainPackRecognizedByUnpack(t *testing.T) {
 		Size:     20,
 	}
 
-	d := PlainDirEntry("test.user@some-mail.com", fi, cfg.Factotum())
+	d := Plain{}.DirEntry("test.user@some-mail.com", fi, cfg.Factotum())
 
 	_, err := pack.Lookup(upspin.PlainPack).Unpack(cfg, d)
 

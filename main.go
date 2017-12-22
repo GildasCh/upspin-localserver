@@ -8,6 +8,7 @@ import (
 
 	"github.com/gildasch/upspin-localserver/dir"
 	"github.com/gildasch/upspin-localserver/local"
+	"github.com/gildasch/upspin-localserver/packing"
 	"github.com/gildasch/upspin-localserver/store"
 	"upspin.io/config"
 	"upspin.io/factotum"
@@ -39,7 +40,8 @@ func main() {
 			Root:     *rootPtr,
 			Storage:  &local.Storage{*rootPtr},
 			Debug:    *debugPtr,
-			Factotum: cfg.Factotum()},
+			Factotum: cfg.Factotum(),
+			Packing:  packing.Plain{}},
 		addr)
 
 	http.Handle("/api/Dir/", dirServer)
