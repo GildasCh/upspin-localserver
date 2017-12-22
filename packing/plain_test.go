@@ -16,7 +16,7 @@ import (
 )
 
 func Test_PlainPackRecognizedByUnpack(t *testing.T) {
-	cfg, _, _, _ := newConfigAndServices(upspin.UserName("gildaschbt+local@gmail.com"))
+	cfg, _, _, _ := newConfigAndServices(upspin.UserName("test.user@some-mail.com"))
 
 	fi := local.FileInfo{
 		Filename: "albert.txt",
@@ -25,7 +25,7 @@ func Test_PlainPackRecognizedByUnpack(t *testing.T) {
 		Size:     20,
 	}
 
-	d := PlainDirEntry(fi, cfg)
+	d := PlainDirEntry("test.user@some-mail.com", fi, cfg.Factotum())
 
 	_, err := pack.Lookup(upspin.PlainPack).Unpack(cfg, d)
 

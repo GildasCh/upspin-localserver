@@ -39,7 +39,7 @@ func main() {
 			Root:     *rootPtr,
 			Storage:  &local.Storage{*rootPtr},
 			Debug:    *debugPtr,
-			Config:   cfg},
+			Factotum: cfg.Factotum()},
 		addr)
 
 	http.Handle("/api/Dir/", dirServer)

@@ -20,14 +20,20 @@ var (
 	zero = big.NewInt(0)
 )
 
-func PlainDirEntry(fi local.FileInfo, cfg upspin.Config) *upspin.DirEntry {
-	e := dirEntryFromFileInfo(fi)
+type Factotum interface {
+	FileSign(hash upspin.DEHash) (upspin.Signature, error)
+	DirEntryHash(
+		n, l upspin.PathName, a upspin.Attribute, p upspin.Packing,
+		t upspin.Time, dkey, hash []byte) upspin.DEHash
+}
+
+func PlainDirEntry(username string, fi local.FileInfo, factotum Factotum) *upspin.DirEntry {
+	e := dirEntryFromFileInfo(username, fi)
 
 	// Compute entry signature with dkey=sum=0.
-	f := cfg.Factotum()
 	dkey := make([]byte, aesKeyLen)
 	sum := make([]byte, sha256.Size)
-	sig, err := f.FileSign(f.DirEntryHash(e.SignedName, e.Link, e.Attr, e.Packing, e.Time, dkey, sum))
+	sig, err := factotum.FileSign(factotum.DirEntryHash(e.SignedName, e.Link, e.Attr, e.Packing, e.Time, dkey, sum))
 	if err != nil {
 		panic(err.Error())
 	}
@@ -37,12 +43,12 @@ func PlainDirEntry(fi local.FileInfo, cfg upspin.Config) *upspin.DirEntry {
 	return e
 }
 
-func dirEntryFromFileInfo(fi local.FileInfo) *upspin.DirEntry {
+func dirEntryFromFileInfo(username string, fi local.FileInfo) *upspin.DirEntry {
 	de := &upspin.DirEntry{
 		Name: upspin.PathName(
-			"gildaschbt+local@gmail.com" + fi.Filename),
+			username + fi.Filename),
 		Packing: upspin.PlainPack,
-		Writer:  upspin.UserName("gildaschbt+local@gmail.com"),
+		Writer:  upspin.UserName(username),
 	}
 	if fi.IsDir {
 		de.Attr = upspin.AttrDirectory
