@@ -1,9 +1,9 @@
 package packing
 
 import (
-	"os"
 	"testing"
 
+	"github.com/gildasch/upspin-localserver/local"
 	"github.com/stretchr/testify/assert"
 	"upspin.io/bind"
 	"upspin.io/config"
@@ -18,8 +18,12 @@ import (
 func Test_PlainPackRecognizedByUnpack(t *testing.T) {
 	cfg, _, _, _ := newConfigAndServices(upspin.UserName("gildaschbt+local@gmail.com"))
 
-	f, _ := os.Open("albert.txt")
-	fi, _ := f.Stat()
+	fi := local.FileInfo{
+		Filename: "albert.txt",
+		Dir:      ".",
+		IsDir:    false,
+		Size:     20,
+	}
 
 	d := PlainDirEntry(fi, cfg)
 
