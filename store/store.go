@@ -46,8 +46,6 @@ func (s *Store) Get(ref upspin.Reference) ([]byte, *upspin.Refdata, []upspin.Loc
 		fmt.Printf("store.Get called with ref=%#v\n", ref)
 	}
 
-	fmt.Println("requested ref:", ref)
-
 	if ref == upspin.HTTPBaseMetadata {
 		return nil, nil, nil, errors.E(errors.NotExist)
 	}
