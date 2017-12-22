@@ -65,7 +65,7 @@ func (s *Store) Get(ref upspin.Reference) ([]byte, *upspin.Refdata, []upspin.Loc
 	}
 
 	bytes := make([]byte, upspin.BlockSize)
-	_, err = f.ReadAt(bytes, offset)
+	n, err := f.ReadAt(bytes, offset)
 	if err != nil && err != io.EOF {
 		return nil, nil, nil, errors.E(errors.IO)
 	}
@@ -74,5 +74,5 @@ func (s *Store) Get(ref upspin.Reference) ([]byte, *upspin.Refdata, []upspin.Loc
 		fmt.Printf("store.Get returning byte array of lenght %d starting with %#v\n", len(bytes), bytes[:20])
 	}
 
-	return bytes, &upspin.Refdata{Reference: ref}, nil, nil
+	return bytes[:n], &upspin.Refdata{Reference: ref}, nil, nil
 }
