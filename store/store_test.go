@@ -70,3 +70,14 @@ func TestGetErrorOpeningFileReturnsNotExist(t *testing.T) {
 
 	assert.EqualError(t, err, "item does not exist")
 }
+
+func TestGetUnreadableFileReturnsIOError(t *testing.T) {
+	store := Store{
+		Root:  "../dir/test_data",
+		Debug: true,
+	}
+
+	_, _, _, err := store.Get(".-1048576")
+
+	assert.EqualError(t, err, "I/O error")
+}
