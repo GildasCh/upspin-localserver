@@ -75,6 +75,35 @@ func (mp *MockPacking) DirEntry(username string, fi local.FileInfo, factotum pac
 	}
 }
 
+func TestDial(t *testing.T) {
+	dir := Dir{
+		Debug: true,
+	}
+
+	actual, err := dir.Dial(nil, upspin.Endpoint{})
+
+	assert.NoError(t, err)
+	assert.Equal(t, &dir, actual)
+}
+
+func TestEndpoint(t *testing.T) {
+	dir := Dir{
+		Debug: true,
+	}
+
+	actual := dir.Endpoint()
+
+	assert.Equal(t, upspin.Endpoint{}, actual)
+}
+
+func TestClose(t *testing.T) {
+	dir := Dir{
+		Debug: true,
+	}
+
+	dir.Close()
+}
+
 func TestLookupOK(t *testing.T) {
 	dir := Dir{
 		Username: "test.user@some-mail.com",
