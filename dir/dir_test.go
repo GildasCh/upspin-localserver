@@ -30,7 +30,23 @@ func (ms *MockStorage) Stat(name string) (local.FileInfo, error) {
 }
 
 func (ms *MockStorage) List(pattern string) ([]local.FileInfo, error) {
-	return nil, nil
+	if ms.err != nil {
+		return nil, ms.err
+	}
+
+	return []local.FileInfo{
+		local.FileInfo{
+			Filename: "/test_data/abc",
+			Dir:      "/test_data",
+			IsDir:    false,
+			Size:     20,
+		},
+		local.FileInfo{
+			Filename: "/test_data/cba",
+			Dir:      "/test_data",
+			IsDir:    false,
+			Size:     40,
+		}}, nil
 }
 
 type MockFactotum struct{}
@@ -49,6 +65,11 @@ func (mf *MockFactotum) DirEntryHash(
 type MockPacking struct{}
 
 func (mp *MockPacking) DirEntry(username string, fi local.FileInfo, factotum packing.Factotum) *upspin.DirEntry {
+	if fi.Filename == "/test_data/cba" {
+		return &upspin.DirEntry{
+			Sequence: 4321,
+		}
+	}
 	return &upspin.DirEntry{
 		Sequence: 1234,
 	}
@@ -59,7 +80,7 @@ func TestLookupOK(t *testing.T) {
 		Username: "test.user@some-mail.com",
 		Root:     ".",
 		Storage:  &MockStorage{},
-		Debug:    false,
+		Debug:    true,
 		Factotum: &MockFactotum{},
 		Packing:  &MockPacking{},
 	}
@@ -80,7 +101,7 @@ func TestLookupErrors(t *testing.T) {
 		Username: "test.user@some-mail.com",
 		Root:     ".",
 		Storage:  storage,
-		Debug:    false,
+		Debug:    true,
 		Factotum: &MockFactotum{},
 		Packing:  &MockPacking{},
 	}
@@ -93,4 +114,44 @@ func TestLookupErrors(t *testing.T) {
 	storage.err = errors.New("dummy error")
 	_, err = dir.Lookup("test.user@some-mail.com/test_data/abc")
 	assert.EqualError(t, err, "could not stat file \"test_data/abc\"")
+	storage.err = nil
+}
+
+func TestGlobOK(t *testing.T) {
+	dir := Dir{
+		Username: "test.user@some-mail.com",
+		Root:     ".",
+		Storage:  &MockStorage{},
+		Debug:    true,
+		Factotum: &MockFactotum{},
+		Packing:  &MockPacking{},
+	}
+
+	entries, err := dir.Glob("test.user@some-mail.com/test_data")
+
+	expected := []*upspin.DirEntry{
+		&upspin.DirEntry{Sequence: 1234},
+		&upspin.DirEntry{Sequence: 4321}}
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, entries)
+}
+
+func TestGlobErrors(t *testing.T) {
+	storage := &MockStorage{}
+	dir := Dir{
+		Username: "test.user@some-mail.com",
+		Root:     ".",
+		Storage:  storage,
+		Debug:    true,
+		Factotum: &MockFactotum{},
+		Packing:  &MockPacking{},
+	}
+
+	_, err := dir.Glob("user.test@some-mail.com/test_data")
+	assert.EqualError(t, err, "path unknown")
+
+	storage.err = errors.New("dummy error")
+	_, err = dir.Glob("test.user@some-mail.com/test_data")
+	assert.EqualError(t, err, "error reading dir: dummy error")
 }
