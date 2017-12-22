@@ -15,7 +15,7 @@ type MockStorage struct{}
 func (ms *MockStorage) Stat(name string) (local.FileInfo, error) {
 	return local.FileInfo{
 		Filename: "/test_data/abc",
-		Dir:      ".",
+		Dir:      "/test_data",
 		IsDir:    false,
 		Size:     20,
 	}, nil
