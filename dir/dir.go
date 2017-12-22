@@ -11,12 +11,17 @@ import (
 	"upspin.io/upspin"
 )
 
+type Storage interface {
+	Stat(name string) (local.FileInfo, error)
+	List(pattern string) ([]local.FileInfo, error)
+}
+
 type Dir struct {
 	upspin.DirServer
 
 	Username string
 	Root     string
-	Storage  *local.Storage
+	Storage  Storage
 	Debug    bool
 	Factotum packing.Factotum
 }
