@@ -28,8 +28,8 @@ func (ms *MockStorage) List(pattern string) ([]local.FileInfo, error) {
 type MockFactotum struct{}
 
 func (mf *MockFactotum) FileSign(hash upspin.DEHash) (upspin.Signature, error) {
-	var R, S big.Int
-	return upspin.Signature{&R, &S}, nil
+	R, S := big.NewInt(32948748), big.NewInt(982238482482302)
+	return upspin.Signature{R, S}, nil
 }
 
 func (mf *MockFactotum) DirEntryHash(
@@ -61,7 +61,7 @@ func TestLookup(t *testing.T) {
 				Offset:   0,
 				Size:     20,
 				Packdata: []uint8(nil)}},
-		Packdata: []uint8{0x0, 0x0, 0x0, 0x0},
+		Packdata: []uint8{0x8, 0x1, 0xf6, 0xc2, 0xc, 0xe, 0x3, 0x7d, 0x57, 0x37, 0xd5, 0x44, 0x7e, 0x0, 0x0},
 		Writer:   "test.user@some-mail.com",
 		Name:     "test.user@some-mail.com/test_data/abc",
 		Sequence: 0,
