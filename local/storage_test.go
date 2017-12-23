@@ -3,6 +3,7 @@ package local
 import (
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -65,16 +66,24 @@ func TestOpenNotFound(t *testing.T) {
 }
 
 func TestStatOK(t *testing.T) {
+	t1, _ := time.Parse(
+		"2006-01-02 15:04:05.000000000 -0700 MST",
+		"2017-12-21 00:30:01.020556451 +0100 CET")
 	fi1 := FileInfo{
 		Filename: "/test_1.txt",
 		Dir:      "",
 		IsDir:    false,
-		Size:     17}
+		Size:     17,
+		Time:     t1}
+	t2, _ := time.Parse(
+		"2006-01-02 15:04:05.000000000 -0700 MST",
+		"2017-12-21 00:30:17.880470714 +0100 CET")
 	fi2 := FileInfo{
 		Filename: "/subdir/toto",
 		Dir:      "/subdir",
 		IsDir:    false,
-		Size:     1}
+		Size:     1,
+		Time:     t2}
 
 	cases := map[string]FileInfo{
 		"test_1.txt":                      fi1,
@@ -108,23 +117,35 @@ func TestStatNotFound(t *testing.T) {
 }
 
 func TestListOK(t *testing.T) {
+	t1, _ := time.Parse(
+		"2006-01-02 15:04:05.000000000 -0700 MST",
+		"2017-12-21 00:30:17.887470679 +0100 CET")
+	t2, _ := time.Parse(
+		"2006-01-02 15:04:05.000000000 -0700 MST",
+		"2017-12-21 00:30:01.020556451 +0100 CET")
 	expected1 := []FileInfo{
 		FileInfo{
 			Filename: "/subdir",
 			Dir:      ".",
 			IsDir:    true,
-			Size:     4096},
+			Size:     4096,
+			Time:     t1},
 		FileInfo{
 			Filename: "/test_1.txt",
 			Dir:      ".",
 			IsDir:    false,
-			Size:     17}}
+			Size:     17,
+			Time:     t2}}
+	t3, _ := time.Parse(
+		"2006-01-02 15:04:05.000000000 -0700 MST",
+		"2017-12-21 00:30:17.880470714 +0100 CET")
 	expected2 := []FileInfo{
 		FileInfo{
 			Filename: "subdir/toto",
 			Dir:      "test_data",
 			IsDir:    false,
-			Size:     1}}
+			Size:     1,
+			Time:     t3}}
 
 	cases := map[string][]FileInfo{
 		"/":      expected1,

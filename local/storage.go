@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -18,6 +19,7 @@ type FileInfo struct {
 	Dir      string
 	IsDir    bool
 	Size     int64
+	Time     time.Time
 }
 
 func (fi FileInfo) Path() string {
@@ -48,6 +50,7 @@ func (s *Storage) Stat(name string) (FileInfo, error) {
 		Dir:      strings.TrimPrefix(s.dir(name), s.Root),
 		IsDir:    fi.IsDir(),
 		Size:     fi.Size(),
+		Time:     fi.ModTime(),
 	}, nil
 }
 
@@ -65,6 +68,7 @@ func (s *Storage) List(pattern string) ([]FileInfo, error) {
 			Dir:      s.dir(pattern),
 			IsDir:    fi.IsDir(),
 			Size:     fi.Size(),
+			Time:     fi.ModTime(),
 		})
 	}
 

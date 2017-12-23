@@ -51,6 +51,7 @@ func dirEntryFromFileInfo(username string, fi local.FileInfo) *upspin.DirEntry {
 			username + fi.Filename),
 		Packing: upspin.PlainPack,
 		Writer:  upspin.UserName(username),
+		Time:    upspin.Time(fi.Time.Unix()),
 	}
 	if fi.IsDir {
 		de.Attr = upspin.AttrDirectory
