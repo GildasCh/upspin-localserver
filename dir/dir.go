@@ -7,8 +7,11 @@ import (
 	"github.com/gildasch/upspin-localserver/local"
 	"github.com/gildasch/upspin-localserver/packing"
 	"github.com/pkg/errors"
+	"upspin.io/access"
 	"upspin.io/path"
 	"upspin.io/upspin"
+	"upspin.io/user"
+	"upspin.io/valid"
 )
 
 type Storage interface {
@@ -25,14 +28,48 @@ type Dir struct {
 	Debug    bool
 	Factotum packing.Factotum
 	Packing  packing.Simulator
+
+	// userName is the name of the user on behalf of whom this
+	// server is serving.
+	userName upspin.UserName
+
+	// baseUser, suffix and domain are the components of userName as parsed
+	// by user.Parse.
+	userBase, userSuffix, userDomain string
+
+	// dialed reports whether the instance was created using Dial, not New.
+	dialed bool
+
+	// defaultAccess is the parsed empty Access files that implicitly exists
+	// at the root of every user's tree, if an explicit one is not found.
+	defaultAccess *access.Access
 }
 
-func (d *Dir) Dial(config upspin.Config, endpoint upspin.Endpoint) (upspin.Service, error) {
+func (d *Dir) Dial(ctx upspin.Config, endpoint upspin.Endpoint) (upspin.Service, error) {
 	if d.Debug {
-		fmt.Printf("dir.Dial called with config=%#v, endpoint=%#v\n", config, endpoint)
+		fmt.Printf("dir.Dial called with ctx=%#v, endpoint=%#v, ctx.UserName()=%#v, ctx.Factotum()=%#v, ctx.Packing()=%#v, ctx.KeyEndpoint()=%#v, ctx.DirEndpoint()=%#v, ctx.StoreEndpoint()=%#v\n", ctx, endpoint, ctx.UserName(), ctx.Factotum(), ctx.Packing(), ctx.KeyEndpoint(), ctx.DirEndpoint(), ctx.StoreEndpoint())
 	}
 
-	return d, nil
+	if err := valid.UserName(ctx.UserName()); err != nil {
+		return nil, errors.Wrapf(err, "invalid username")
+	}
+
+	cp := *d // copy of the generator instance.
+	// Overwrite the userName and its sub-components (base, suffix, domain).
+	cp.userName = ctx.UserName()
+	cp.dialed = true
+	var err error
+	cp.userBase, cp.userSuffix, cp.userDomain, err = user.Parse(cp.userName)
+	if err != nil {
+		return nil, err
+	}
+
+	// create a default Access file for this user.
+	cp.defaultAccess, err = access.New(upspin.PathName(cp.userName + "/"))
+	if err != nil {
+		return nil, err
+	}
+	return &cp, nil
 }
 
 func (d *Dir) Endpoint() upspin.Endpoint {
@@ -80,7 +117,7 @@ func (d *Dir) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 
 func (d *Dir) Glob(pattern string) ([]*upspin.DirEntry, error) {
 	if d.Debug {
-		fmt.Printf("dir.Glob called with pattern=%#v\n", pattern)
+		fmt.Printf("dir.Glob called with pattern=%#v, d=%#v\n", pattern, d)
 	}
 
 	if !strings.HasPrefix(pattern, d.Username) {
