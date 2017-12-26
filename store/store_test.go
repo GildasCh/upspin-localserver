@@ -81,3 +81,26 @@ func TestGetUnreadableFileReturnsIOError(t *testing.T) {
 
 	assert.EqualError(t, err, "I/O error")
 }
+
+func TestSplit(t *testing.T) {
+	cases := map[string]struct {
+		relativePath string
+		offset       int64
+	}{
+		"filename.ext-0":                {"filename.ext", 0},
+		"/in/subfolder/filename.ext-0":  {"/in/subfolder/filename.ext", 0},
+		"/dir/filename-with-dash.ext-0": {"/dir/filename-with-dash.ext", 0},
+	}
+
+	store := Store{
+		Root:  "../dir/test_data",
+		Debug: true,
+	}
+
+	for in, expected := range cases {
+		actualRelative, actualOffset, err := store.split(in)
+		assert.NoError(t, err)
+		assert.Equal(t, expected.relativePath, actualRelative)
+		assert.Equal(t, expected.offset, actualOffset)
+	}
+}

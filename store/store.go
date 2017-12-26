@@ -41,6 +41,20 @@ func (s *Store) Close() {
 	}
 }
 
+func (s *Store) split(ref string) (relativePath string, offset int64, err error) {
+	split := strings.Split(ref, "-")
+
+	offset, err = strconv.ParseInt(split[len(split)-1], 10, 64)
+	if err != nil {
+		return
+	}
+
+	relativePath = strings.Join(
+		split[:len(split)-1], "-")
+
+	return
+}
+
 func (s *Store) Get(ref upspin.Reference) ([]byte, *upspin.Refdata, []upspin.Location, error) {
 	if s.Debug {
 		fmt.Printf("store.Get called with ref=%#v\n", ref)
@@ -50,15 +64,11 @@ func (s *Store) Get(ref upspin.Reference) ([]byte, *upspin.Refdata, []upspin.Loc
 		return nil, nil, nil, errors.E(errors.NotExist)
 	}
 
-	split := strings.Split(string(ref), "-")
-
-	offset, err := strconv.ParseInt(split[len(split)-1], 10, 64)
+	relativePath, offset, err := s.split(string(ref))
 	if err != nil {
 		return nil, nil, nil, errors.E(errors.NotExist)
 	}
 
-	relativePath := strings.Join(
-		split[:len(split)-1], "")
 	f, err := os.Open(path.Join(s.Root, relativePath))
 	if err != nil {
 		return nil, nil, nil, errors.E(errors.NotExist)
