@@ -8,6 +8,7 @@ import (
 	"github.com/gildasch/upspin-localserver/packing"
 	"github.com/pkg/errors"
 	"upspin.io/access"
+	uperrors "upspin.io/errors"
 	"upspin.io/path"
 	"upspin.io/serverutil"
 	"upspin.io/upspin"
@@ -18,6 +19,7 @@ import (
 type Storage interface {
 	Stat(name string) (local.FileInfo, error)
 	List(pattern string) ([]local.FileInfo, error)
+	Access(name string) []byte
 }
 
 type Dir struct {
@@ -48,7 +50,8 @@ type Dir struct {
 
 func (d *Dir) Dial(ctx upspin.Config, endpoint upspin.Endpoint) (upspin.Service, error) {
 	if d.Debug {
-		fmt.Printf("dir.Dial called with ctx=%#v, endpoint=%#v, ctx.UserName()=%#v, ctx.Factotum()=%#v, ctx.Packing()=%#v, ctx.KeyEndpoint()=%#v, ctx.DirEndpoint()=%#v, ctx.StoreEndpoint()=%#v\n", ctx, endpoint, ctx.UserName(), ctx.Factotum(), ctx.Packing(), ctx.KeyEndpoint(), ctx.DirEndpoint(), ctx.StoreEndpoint())
+		// fmt.Printf("dir.Dial called with ctx=%#v, endpoint=%#v, ctx.UserName()=%#v, ctx.Factotum()=%#v, ctx.Packing()=%#v, ctx.KeyEndpoint()=%#v, ctx.DirEndpoint()=%#v, ctx.StoreEndpoint()=%#v\n", ctx, endpoint, ctx.UserName(), ctx.Factotum(), ctx.Packing(), ctx.KeyEndpoint(), ctx.DirEndpoint(), ctx.StoreEndpoint())
+		fmt.Printf("dir.Dial called with ctx=%#v, endpoint=%#v\n", ctx, endpoint)
 	}
 
 	if err := valid.UserName(ctx.UserName()); err != nil {
@@ -143,6 +146,19 @@ func (d *Dir) listDir(name upspin.PathName) ([]*upspin.DirEntry, error) {
 	}
 
 	pattern := strings.TrimPrefix(string(name), d.Username)
+
+	if d.userName == "" {
+		return nil, uperrors.E(uperrors.Private)
+	}
+
+	acc, err := access.Parse(name+"/Access", d.Storage.Access(pattern+"Access"))
+	if err != nil {
+		return nil, errors.Wrap(err, "error parsing access file")
+	}
+
+	if ok, _ := acc.Can(d.userName, access.List, upspin.PathName(pattern), nil); !ok {
+		return nil, uperrors.E(uperrors.Private)
+	}
 
 	fis, err := d.Storage.List(pattern)
 	if err != nil {

@@ -54,6 +54,10 @@ func (s *Storage) Stat(name string) (FileInfo, error) {
 	}, nil
 }
 
+func (s *Storage) Access(name string) []byte {
+	return []byte(`read: gildaschbt@gmail.com`)
+}
+
 func (s *Storage) List(pattern string) ([]FileInfo, error) {
 	fis, err := ioutil.ReadDir(s.filename(pattern))
 	if err != nil {

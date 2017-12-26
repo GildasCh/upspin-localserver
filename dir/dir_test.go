@@ -3,6 +3,7 @@ package dir
 import (
 	"errors"
 	"math/big"
+	"strings"
 	"testing"
 
 	"github.com/gildasch/upspin-localserver/local"
@@ -68,6 +69,13 @@ func (ms *MockStorage) List(pattern string) ([]local.FileInfo, error) {
 			IsDir:    false,
 			Size:     40,
 		}}, nil
+}
+
+func (ms *MockStorage) Access(name string) []byte {
+	if strings.HasSuffix(name, "Access") {
+		return []byte("*:test.user@some-mail.com")
+	}
+	return nil
 }
 
 type MockFactotum struct{}
@@ -201,6 +209,8 @@ func TestGlobOK(t *testing.T) {
 		Debug:    false,
 		Factotum: &MockFactotum{},
 		Packing:  &MockPacking{},
+
+		userName: "test.user@some-mail.com",
 	}
 
 	entries, err := dir.Glob("test.user@some-mail.com/test_data/*")
@@ -226,6 +236,8 @@ func TestGlobErrors(t *testing.T) {
 		Debug:    false,
 		Factotum: &MockFactotum{},
 		Packing:  &MockPacking{},
+
+		userName: "test.user@some-mail.com",
 	}
 
 	_, err := dir.Glob("user.test@some-mail.com/test_data/*")
