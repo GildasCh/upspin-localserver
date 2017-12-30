@@ -16,12 +16,26 @@ import (
 )
 
 type MockStorage struct {
-	err error
+	err       error
+	statError error
+	listError error
 }
 
 func (ms *MockStorage) Stat(name string) (local.FileInfo, error) {
 	if ms.err != nil {
 		return local.FileInfo{}, ms.err
+	}
+
+	if ms.statError != nil {
+		return local.FileInfo{}, ms.statError
+	}
+
+	if name == "/test_data" {
+		return local.FileInfo{
+			Filename: "/test_data",
+			Dir:      "/",
+			IsDir:    true,
+		}, nil
 	}
 
 	return local.FileInfo{
@@ -35,6 +49,10 @@ func (ms *MockStorage) Stat(name string) (local.FileInfo, error) {
 func (ms *MockStorage) List(pattern string) ([]local.FileInfo, error) {
 	if ms.err != nil {
 		return nil, ms.err
+	}
+
+	if ms.listError != nil {
+		return nil, ms.listError
 	}
 
 	return []local.FileInfo{
@@ -70,10 +88,12 @@ type MockPacking struct{}
 func (mp *MockPacking) DirEntry(username string, fi local.FileInfo, factotum packing.Factotum) *upspin.DirEntry {
 	if fi.Filename == "/test_data/cba" {
 		return &upspin.DirEntry{
+			Name:     upspin.PathName(username + fi.Filename),
 			Sequence: 4321,
 		}
 	}
 	return &upspin.DirEntry{
+		Name:     upspin.PathName(username + fi.Filename),
 		Sequence: 1234,
 	}
 }
@@ -143,6 +163,7 @@ func TestLookupOK(t *testing.T) {
 	entry, err := dir.Lookup("test.user@some-mail.com/test_data/abc")
 
 	expected := &upspin.DirEntry{
+		Name:     "test.user@some-mail.com/test_data/abc",
 		Sequence: 1234,
 	}
 
@@ -168,7 +189,7 @@ func TestLookupErrors(t *testing.T) {
 
 	storage.err = errors.New("dummy error")
 	_, err = dir.Lookup("test.user@some-mail.com/test_data/abc")
-	assert.EqualError(t, err, "could not stat file \"test_data/abc\"")
+	assert.EqualError(t, err, "could not stat file \"test_data/abc\": dummy error")
 	storage.err = nil
 }
 
@@ -182,11 +203,15 @@ func TestGlobOK(t *testing.T) {
 		Packing:  &MockPacking{},
 	}
 
-	entries, err := dir.Glob("test.user@some-mail.com/test_data")
+	entries, err := dir.Glob("test.user@some-mail.com/test_data/*")
 
 	expected := []*upspin.DirEntry{
-		&upspin.DirEntry{Sequence: 1234},
-		&upspin.DirEntry{Sequence: 4321}}
+		&upspin.DirEntry{
+			Name:     "test.user@some-mail.com/test_data/abc",
+			Sequence: 1234},
+		&upspin.DirEntry{
+			Name:     "test.user@some-mail.com/test_data/cba",
+			Sequence: 4321}}
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, entries)
@@ -203,10 +228,10 @@ func TestGlobErrors(t *testing.T) {
 		Packing:  &MockPacking{},
 	}
 
-	_, err := dir.Glob("user.test@some-mail.com/test_data")
+	_, err := dir.Glob("user.test@some-mail.com/test_data/*")
 	assert.EqualError(t, err, "path unknown")
 
-	storage.err = errors.New("dummy error")
-	_, err = dir.Glob("test.user@some-mail.com/test_data")
-	assert.EqualError(t, err, "error reading dir: dummy error")
+	storage.listError = errors.New("dummy error")
+	_, err = dir.Glob("test.user@some-mail.com/test_data/*")
+	assert.EqualError(t, err, "error during glob: test.user@some-mail.com/test_data: error reading dir: dummy error")
 }

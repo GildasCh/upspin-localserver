@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"upspin.io/access"
 	"upspin.io/path"
+	"upspin.io/serverutil"
 	"upspin.io/upspin"
 	"upspin.io/user"
 	"upspin.io/valid"
@@ -103,7 +104,7 @@ func (d *Dir) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 	fi, err := d.Storage.Stat(p.FilePath())
 	if err != nil {
 		return nil,
-			fmt.Errorf("could not stat file %q", p.FilePath())
+			fmt.Errorf("could not stat file %q: %v", p.FilePath(), err)
 	}
 
 	de := d.Packing.DirEntry(d.Username, fi, d.Factotum)
@@ -123,8 +124,25 @@ func (d *Dir) Glob(pattern string) ([]*upspin.DirEntry, error) {
 	if !strings.HasPrefix(pattern, d.Username) {
 		return nil, errors.New("path unknown")
 	}
-	pattern = strings.TrimPrefix(pattern, d.Username)
-	pattern = strings.TrimSuffix(pattern, "*")
+
+	entries, err := serverutil.Glob(pattern, d.Lookup, d.listDir)
+	if err != nil && err != upspin.ErrFollowLink {
+		return nil, errors.Wrap(err, "error during glob")
+	}
+
+	if d.Debug {
+		fmt.Printf("dir.Glob returning %#v\n", entries)
+	}
+
+	return entries, err
+}
+
+func (d *Dir) listDir(name upspin.PathName) ([]*upspin.DirEntry, error) {
+	if d.Debug {
+		fmt.Printf("dir.listDir called with name=%#v, d=%#v\n", name, d)
+	}
+
+	pattern := strings.TrimPrefix(string(name), d.Username)
 
 	fis, err := d.Storage.List(pattern)
 	if err != nil {
@@ -139,8 +157,9 @@ func (d *Dir) Glob(pattern string) ([]*upspin.DirEntry, error) {
 	}
 
 	if d.Debug {
-		fmt.Printf("dir.Glob returning %#v\n", ret)
+		fmt.Printf("dir.listDir returning %#v\n", ret)
 	}
 
 	return ret, nil
+
 }
