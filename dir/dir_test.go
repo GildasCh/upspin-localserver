@@ -8,6 +8,9 @@ import (
 	"github.com/gildasch/upspin-localserver/local"
 	"github.com/gildasch/upspin-localserver/packing"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"upspin.io/access"
+	"upspin.io/config"
 	_ "upspin.io/store/transports"
 	"upspin.io/upspin"
 )
@@ -76,14 +79,37 @@ func (mp *MockPacking) DirEntry(username string, fi local.FileInfo, factotum pac
 }
 
 func TestDial(t *testing.T) {
+	userName := "test.user@some-mail.com"
+	defaultAccess, err := access.New(upspin.PathName(userName + "/"))
+	require.NoError(t, err)
 	dir := Dir{
-		Debug: true,
+		Username:      userName,
+		Root:          ".",
+		Storage:       &MockStorage{},
+		Debug:         true,
+		Factotum:      &MockFactotum{},
+		Packing:       &MockPacking{},
+		defaultAccess: defaultAccess,
 	}
 
-	actual, err := dir.Dial(nil, upspin.Endpoint{})
+	endpoint := upspin.Endpoint{
+		Transport: upspin.InProcess,
+		NetAddr:   "", // ignored
+	}
+	cfg := config.New()
+	cfg = config.SetUserName(cfg, upspin.UserName(userName))
+	cfg = config.SetPacking(cfg, upspin.EEPack)
+	cfg = config.SetKeyEndpoint(cfg, endpoint)
+	cfg = config.SetStoreEndpoint(cfg, endpoint)
+	cfg = config.SetDirEndpoint(cfg, endpoint)
 
-	assert.NoError(t, err)
-	assert.Equal(t, &dir, actual)
+	actualService, err := dir.Dial(cfg, upspin.Endpoint{})
+	require.NoError(t, err)
+
+	actual, ok := actualService.(*Dir)
+	require.True(t, ok)
+	assert.Equal(t, cfg.UserName(), actual.userName)
+	assert.True(t, actual.dialed)
 }
 
 func TestEndpoint(t *testing.T) {
