@@ -86,7 +86,7 @@ func TestDial(t *testing.T) {
 		Username:      userName,
 		Root:          ".",
 		Storage:       &MockStorage{},
-		Debug:         true,
+		Debug:         false,
 		Factotum:      &MockFactotum{},
 		Packing:       &MockPacking{},
 		defaultAccess: defaultAccess,
@@ -114,7 +114,7 @@ func TestDial(t *testing.T) {
 
 func TestEndpoint(t *testing.T) {
 	dir := Dir{
-		Debug: true,
+		Debug: false,
 	}
 
 	actual := dir.Endpoint()
@@ -124,7 +124,7 @@ func TestEndpoint(t *testing.T) {
 
 func TestClose(t *testing.T) {
 	dir := Dir{
-		Debug: true,
+		Debug: false,
 	}
 
 	dir.Close()
@@ -135,7 +135,7 @@ func TestLookupOK(t *testing.T) {
 		Username: "test.user@some-mail.com",
 		Root:     ".",
 		Storage:  &MockStorage{},
-		Debug:    true,
+		Debug:    false,
 		Factotum: &MockFactotum{},
 		Packing:  &MockPacking{},
 	}
@@ -156,7 +156,7 @@ func TestLookupErrors(t *testing.T) {
 		Username: "test.user@some-mail.com",
 		Root:     ".",
 		Storage:  storage,
-		Debug:    true,
+		Debug:    false,
 		Factotum: &MockFactotum{},
 		Packing:  &MockPacking{},
 	}
@@ -177,7 +177,7 @@ func TestGlobOK(t *testing.T) {
 		Username: "test.user@some-mail.com",
 		Root:     ".",
 		Storage:  &MockStorage{},
-		Debug:    true,
+		Debug:    false,
 		Factotum: &MockFactotum{},
 		Packing:  &MockPacking{},
 	}
@@ -198,7 +198,7 @@ func TestGlobErrors(t *testing.T) {
 		Username: "test.user@some-mail.com",
 		Root:     ".",
 		Storage:  storage,
-		Debug:    true,
+		Debug:    false,
 		Factotum: &MockFactotum{},
 		Packing:  &MockPacking{},
 	}

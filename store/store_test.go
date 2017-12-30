@@ -9,7 +9,7 @@ import (
 
 func TestDial(t *testing.T) {
 	store := Store{
-		Debug: true,
+		Debug: false,
 	}
 
 	actual, err := store.Dial(nil, upspin.Endpoint{})
@@ -20,7 +20,7 @@ func TestDial(t *testing.T) {
 
 func TestEndpoint(t *testing.T) {
 	store := Store{
-		Debug: true,
+		Debug: false,
 	}
 
 	actual := store.Endpoint()
@@ -30,7 +30,7 @@ func TestEndpoint(t *testing.T) {
 
 func TestClose(t *testing.T) {
 	store := Store{
-		Debug: true,
+		Debug: false,
 	}
 
 	store.Close()
@@ -39,7 +39,7 @@ func TestClose(t *testing.T) {
 func TestGetOK(t *testing.T) {
 	store := Store{
 		Root:  "../dir/test_data",
-		Debug: true,
+		Debug: false,
 	}
 
 	b, r, l, err := store.Get("abc-0")
@@ -74,7 +74,7 @@ func TestGetErrorOpeningFileReturnsNotExist(t *testing.T) {
 func TestGetUnreadableFileReturnsIOError(t *testing.T) {
 	store := Store{
 		Root:  "../dir/test_data",
-		Debug: true,
+		Debug: false,
 	}
 
 	_, _, _, err := store.Get(".-1048576")
@@ -94,7 +94,7 @@ func TestSplit(t *testing.T) {
 
 	store := Store{
 		Root:  "../dir/test_data",
-		Debug: true,
+		Debug: false,
 	}
 
 	for in, expected := range cases {
