@@ -19,7 +19,7 @@ import (
 type Storage interface {
 	Stat(name string) (local.FileInfo, error)
 	List(pattern string) ([]local.FileInfo, error)
-	Access(name string) []byte
+	Access(name string) ([]byte, bool)
 }
 
 type Dir struct {
@@ -145,20 +145,11 @@ func (d *Dir) listDir(name upspin.PathName) ([]*upspin.DirEntry, error) {
 		fmt.Printf("dir.listDir called with name=%#v, d=%#v\n", name, d)
 	}
 
+	if !d.canList(name) {
+		return nil, uperrors.E(uperrors.Private)
+	}
+
 	pattern := strings.TrimPrefix(string(name), d.Username)
-
-	if d.userName == "" {
-		return nil, uperrors.E(uperrors.Private)
-	}
-
-	acc, err := access.Parse(name+"/Access", d.Storage.Access(pattern+"Access"))
-	if err != nil {
-		return nil, errors.Wrap(err, "error parsing access file")
-	}
-
-	if ok, _ := acc.Can(d.userName, access.List, upspin.PathName(pattern), nil); !ok {
-		return nil, uperrors.E(uperrors.Private)
-	}
 
 	fis, err := d.Storage.List(pattern)
 	if err != nil {

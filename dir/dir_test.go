@@ -71,11 +71,11 @@ func (ms *MockStorage) List(pattern string) ([]local.FileInfo, error) {
 		}}, nil
 }
 
-func (ms *MockStorage) Access(name string) []byte {
+func (ms *MockStorage) Access(name string) ([]byte, bool) {
 	if strings.HasSuffix(name, "Access") {
-		return []byte("*:test.user@some-mail.com")
+		return []byte("*:test.user@some-mail.com"), true
 	}
-	return nil
+	return nil, false
 }
 
 type MockFactotum struct{}

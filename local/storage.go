@@ -54,8 +54,8 @@ func (s *Storage) Stat(name string) (FileInfo, error) {
 	}, nil
 }
 
-func (s *Storage) Access(name string) []byte {
-	return []byte(`read: gildaschbt@gmail.com`)
+func (s *Storage) Access(name string) ([]byte, bool) {
+	return []byte(`read: gildaschbt@gmail.com`), true
 }
 
 func (s *Storage) List(pattern string) ([]FileInfo, error) {
