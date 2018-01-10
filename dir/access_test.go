@@ -1,10 +1,14 @@
 package dir
 
 import (
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/gildasch/upspin-localserver/local"
 	"github.com/stretchr/testify/assert"
+	"upspin.io/access"
+	"upspin.io/upspin"
 )
 
 type MockAccessStorage struct {
@@ -83,4 +87,19 @@ func TestCanListNoAccessFile(t *testing.T) {
 		"target.user@mail.com/Access"}
 
 	assert.Equal(t, expectedCalled, storage.called)
+}
+
+func TestAccess(t *testing.T) {
+	acc, err := access.Parse("gildaschbt+local@gmail.com/truc",
+		[]byte(`read: gildaschbt@gmail.com`))
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(acc)
+
+	can, err := acc.Can("gildaschbt@gmail.com", access.List, "gildaschbt+local@gmail.com/truc", func(upspin.PathName) ([]byte, error) { return nil, errors.New("") })
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(can)
 }
